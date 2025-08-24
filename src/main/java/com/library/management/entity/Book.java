@@ -25,7 +25,8 @@ public class Book {
     
     @Column(nullable = false)
     private String name;
-    
+
+    @Column(name = "short_details")
     private String shortDetails;
     
     @Column(nullable = false)
@@ -42,15 +43,16 @@ public class Book {
     @Column(nullable = false)
     private BookFormat format;
     
-    @Column(nullable = false)
+    @Column(name = "total_copies", nullable = false)
     private Integer totalCopies;
     
-    @Column(nullable = false)
+    @Column(name = "available_copies", nullable = false)
     private Integer availableCopies;
     
     @Column(unique = true)
     private String isbn;
-    
+
+    @Column(name = "publication_year")
     private Integer publicationYear;
 
 //    private String book_cover;

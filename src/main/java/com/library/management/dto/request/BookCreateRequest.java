@@ -20,6 +20,7 @@ public class BookCreateRequest {
     
     @Size(max = 500, message = "Short details must not exceed 500 characters")
     @Schema(description = "Short details about the book", example = "A classic American novel")
+    @JsonProperty("short_details")
     private String shortDetails;
     
     @NotBlank(message = "Author is required")
@@ -42,10 +43,11 @@ public class BookCreateRequest {
     @NotNull(message = "Total copies is required")
     @Min(value = 1, message = "Total copies must be at least 1")
     @Schema(description = "Total number of copies", example = "5")
-    @JsonProperty("totalCopies")
+    @JsonProperty("total_copies")
     private Integer totalCopies;
     
     @Schema(description = "Number of available copies (defaults to total copies if not provided)", example = "5")
+    @JsonProperty("available_copies")
     private Integer availableCopies;
     
     @Size(max = 20, message = "ISBN must not exceed 20 characters")
@@ -55,15 +57,19 @@ public class BookCreateRequest {
     @Min(value = 1000, message = "Publication year must be at least 1000")
     @Max(value = 2100, message = "Publication year must not exceed 2100")
     @Schema(description = "Publication year of the book", example = "1925")
+    @JsonProperty("publication_year")
     private Integer publicationYear;
 
     @Schema(description = "URL for book cover image", example = "https://example.com/covers/great-gatsby.jpg")
+    @JsonProperty("book_cover_url")
     private String bookCoverUrl;
 
     @Schema(description = "URL for PDF version of the book", example = "https://example.com/pdfs/great-gatsby.pdf")
+    @JsonProperty("pdf_file_url")
     private String pdfFileUrl;
 
     @Schema(description = "URL for audio version of the book", example = "https://example.com/audio/great-gatsby.mp3")
+    @JsonProperty("audio_file_url")
     private String audioFileUrl;
 
 }

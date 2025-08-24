@@ -1,5 +1,6 @@
 package com.library.management.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.library.management.entity.Book;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
@@ -21,6 +22,7 @@ public class BookUpdateRequest {
     
     @Size(max = 500, message = "Short details must not exceed 500 characters")
     @Schema(description = "Short details about the book", example = "A classic American novel - Updated")
+    @JsonProperty("short_details")
     private String shortDetails;
     
     @Size(min = 1, max = 255, message = "Author name must be between 1 and 255 characters")
@@ -38,10 +40,12 @@ public class BookUpdateRequest {
     
     @Min(value = 1, message = "Total copies must be at least 1")
     @Schema(description = "Total number of copies", example = "7")
+    @JsonProperty("total_copies")
     private Integer totalCopies;
     
     @Min(value = 0, message = "Available copies cannot be negative")
     @Schema(description = "Number of available copies", example = "6")
+    @JsonProperty("available_copies")
     private Integer availableCopies;
     
     @Size(max = 20, message = "ISBN must not exceed 20 characters")
@@ -51,6 +55,7 @@ public class BookUpdateRequest {
     @Min(value = 1000, message = "Publication year must be at least 1000")
     @Max(value = 2100, message = "Publication year must not exceed 2100")
     @Schema(description = "Publication year of the book", example = "1925")
+    @JsonProperty("publication_year")
     private Integer publicationYear;
 
 //    private String book_cover;
@@ -61,10 +66,11 @@ public class BookUpdateRequest {
 //
 //    private String audio_file;
 //    private String audio_fileUrl;
+    @JsonProperty("book_cover_url")
     private String bookCoverUrl;
-
+    @JsonProperty("pdf_file_url")
     private String pdfFileUrl;
-
+    @JsonProperty("audio_file_url")
     private String audioFileUrl;
 }
 
