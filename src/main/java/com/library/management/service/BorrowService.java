@@ -255,14 +255,15 @@ public class BorrowService {
         if (borrow.getStatus() == Borrow.BorrowStatus.RETURNED || borrow.getStatus() == Borrow.BorrowStatus.REJECTED) {
             throw new BusinessLogicException("Cannot reject already returned or rejected borrow request");
         }
-        
-        borrow.setStatus(Borrow.BorrowStatus.REJECTED);
-        
-        // If the book was borrowed (not just pending), increment available copies
-        if (borrow.getStatus() == Borrow.BorrowStatus.ACTIVE) {
-            bookService.incrementAvailableCopies(borrow.getBook().getId());
+
+        if (borrow.getStatus() != Borrow.BorrowStatus.REQUESTED) {
+            throw new BusinessLogicException("Only requested borrow records can be rejected");
         }
-        
+
+        // Return the reserved copy since request is being rejected
+        bookService.incrementAvailableCopies(borrow.getBook().getId());
+
+        borrow.setStatus(Borrow.BorrowStatus.REJECTED);
         Borrow updatedBorrow = borrowRepository.save(borrow);
         return borrowMapper.toResponse(updatedBorrow);
     }
@@ -281,9 +282,12 @@ public class BorrowService {
         if (borrow.getBook().getAvailableCopies() <= 0) {
             throw new BusinessLogicException("Book is no longer available for borrowing");
         }
-        
-        borrow.setStatus(Borrow.BorrowStatus.ACCEPTED);
-        
+
+        // Directly activate borrow upon acceptance
+        borrow.setStatus(Borrow.BorrowStatus.ACTIVE);
+        borrow.setBorrowDate(LocalDate.now());
+        borrow.setDueDate(LocalDate.now().plusDays(BORROW_PERIOD_DAYS));
+
         Borrow updatedBorrow = borrowRepository.save(borrow);
         return borrowMapper.toResponse(updatedBorrow);
     }
