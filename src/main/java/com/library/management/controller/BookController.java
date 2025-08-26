@@ -220,5 +220,24 @@ public class BookController {
         BookResponse response = bookService.updateBookAvailability(id, availableCopies);
         return ResponseEntity.ok(response);
     }
+
+    @PatchMapping("/{id}/category")
+//    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Update book category", description = "Updates only the category of a book (Admin only)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Book category updated successfully",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = BookResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Book or category not found")
+    })
+    public ResponseEntity<BookResponse> updateBookCategory(
+            @Parameter(description = "Book ID") @PathVariable Long id,
+            @Parameter(description = "New Category ID") @RequestParam Long categoryId) {
+        BookResponse response = bookService.updateBookCategory(id, categoryId);
+        return ResponseEntity.ok(response);
+    }
+
+
+
 }
 

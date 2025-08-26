@@ -223,5 +223,16 @@ public class BookService {
             throw new BusinessLogicException("Available copies cannot exceed total copies");
         }
     }
+
+    @Transactional
+    public BookResponse updateBookCategory(Long bookId, Long categoryId) {
+        Book book = getBookEntityById(bookId);
+        Category category = categoryService.getCategoryEntityById(categoryId);
+
+        book.setCategory(category);
+
+        Book savedBook = bookRepository.save(book);
+        return bookMapper.toResponse(savedBook);
+    }
 }
 

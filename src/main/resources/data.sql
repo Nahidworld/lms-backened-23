@@ -5,7 +5,8 @@ INSERT INTO categories (name, description, created_at, updated_at) VALUES
 ('Technology', 'Technology, programming, and computer science books', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('History', 'Historical books and biographies', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('Philosophy', 'Philosophy and ethics books', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Business', 'Business, economics, and management books', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+('Business', 'Business, economics, and management books', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Featured', 'Featured books', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert sample users
 INSERT INTO users (username, name, email, password_hash, role, date_of_birth, address, is_active, created_at, updated_at) VALUES
@@ -25,7 +26,9 @@ INSERT INTO books (name, author, isbn, publication_year, total_copies, available
 ('Good to Great', 'Jim Collins', '978-0-06-662099-2', 2001, 33, 22, 6, 'A management book', 'A management book about company transformation', 'HARD_COPY', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,'https://upload.wikimedia.org/wikipedia/en/0/03/Cover_Good_2_Gr8.jpg', null, null),
 ('1984', 'George Orwell', '978-0-452-28423-4', 1949, 55, 33, 1, 'A dystopian social science fiction', 'A dystopian social science fiction novel', 'HARD_COPY', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,'https://upload.wikimedia.org/wikipedia/commons/5/51/1984_first_edition_cover.jpg', null, null),
 ('The Origin of Species', 'Charles Darwin', '978-0-14-043205-9', 1859, 22, 22, 2, 'A work of scientific literature', 'A work of scientific literature on evolution', 'HARD_COPY', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,'https://upload.wikimedia.org/wikipedia/commons/c/cd/Origin_of_Species_title_page.jpg', null, null),
-('Design Patterns', 'Gang of Four', '978-0-201-63361-0', 1994, 44, 33, 3, 'Elements of reusable software', 'Elements of reusable object-oriented software', 'E_BOOK', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,'https://upload.wikimedia.org/wikipedia/en/7/78/Design_Patterns_cover.jpg', null, null);
+('Design Patterns', 'Gang of Four', '978-0-201-63361-0', 1994, 44, 33, 3, 'Elements of reusable software', 'Elements of reusable object-oriented software', 'E_BOOK', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,'https://upload.wikimedia.org/wikipedia/en/7/78/Design_Patterns_cover.jpg', null, null),
+('Steal Like an Artist', 'Austin Kleon', '978-8-858-122259-2', 2012, 44, 33, 7, 'Steal Like an Artist: 10 Things Nobody Told You About Being Creative is a book on coming up with creative ideas written by Austin Kleon and published in 2012 from Workman Publishing. The book has since then become a New York Times Bestseller.', 'Elements of reusable object-oriented software', 'E_BOOK',
+ CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1430943636i/24693052.jpg', 'https://pdfdrive.com.co/wp-content/pdfh/Steal-LikeanArtist-PDFdrive.pdf', 'https://cdn.pixabay.com/download/audio/2021/11/02/audio_7801c25e41.mp3?filename=a-bird-10226.mp3');
 
 
 -- Insert sample borrows (some active, some returned)
