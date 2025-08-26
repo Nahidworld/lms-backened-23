@@ -48,6 +48,21 @@ public class BorrowService {
         return borrowRepository.countByStatus(Borrow.BorrowStatus.OVERDUE);
     }
 
+    @Transactional(readOnly = true)
+    public long countTotalBorrows() {
+        return borrowRepository.count();
+    }
+
+    @Transactional(readOnly = true)
+    public long countRequestedBorrows() {
+        return borrowRepository.countByStatus(Borrow.BorrowStatus.REQUESTED);
+    }
+
+    @Transactional(readOnly = true)
+    public long countRejectedBorrows() {
+        return borrowRepository.countByStatus(Borrow.BorrowStatus.REJECTED);
+    }
+
 
     @Transactional
     public BorrowResponse borrowBook(BorrowCreateRequest request) {

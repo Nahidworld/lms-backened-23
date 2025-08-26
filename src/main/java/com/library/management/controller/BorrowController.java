@@ -31,17 +31,23 @@ public class BorrowController {
     @GetMapping("/stats")
     @Tag(name = "Borrow Statistics", description = "APIs for getting statistics of borrowed books")
     @Operation(summary = "Get borrow statistics",
-            description = "Returns total counts of borrowed, returned, and overdue books")
+            description = "Returns total counts of borrowed, returned, overdue, requests, and rejects")
     @ApiResponse(responseCode = "200", description = "Statistics retrieved successfully")
     public ResponseEntity<Map<String, Long>> getBorrowStats() {
-        long borrowedCount = borrowService.countActiveBorrows();
-        long returnedCount = borrowService.countReturnedBorrows();
-        long overdueCount  = borrowService.countOverdueBorrows();
+        long totalBorrows   = borrowService.countTotalBorrows();
+        long borrowedCount  = borrowService.countActiveBorrows();
+        long returnedCount  = borrowService.countReturnedBorrows();
+        long overdueCount   = borrowService.countOverdueBorrows();
+        long requestCount   = borrowService.countRequestedBorrows();
+        long rejectCount    = borrowService.countRejectedBorrows();
 
         Map<String, Long> stats = new HashMap<>();
+        stats.put("totalBorrowed", totalBorrows);
         stats.put("borrowedBooks", borrowedCount);
         stats.put("returnedBooks", returnedCount);
         stats.put("overdueBooks", overdueCount);
+        stats.put("totalRequest", requestCount);
+        stats.put("totalReject", rejectCount);
 
         return ResponseEntity.ok(stats);
     }
