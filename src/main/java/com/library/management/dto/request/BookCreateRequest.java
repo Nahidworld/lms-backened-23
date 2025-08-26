@@ -18,7 +18,7 @@ public class BookCreateRequest {
     @Schema(description = "Name of the book", example = "The Great Gatsby")
     private String name;
     
-    @Size(max = 500, message = "Short details must not exceed 500 characters")
+    @Size(max = 50000, message = "Short details must not exceed 50000 characters")
     @Schema(description = "Short details about the book", example = "A classic American novel")
     @JsonProperty("short_details")
     private String shortDetails;
