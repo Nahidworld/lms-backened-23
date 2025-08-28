@@ -24,5 +24,10 @@ public class BorrowCreateRequest {
     @Schema(description = "ID of the book being borrowed", example = "1")
     @JsonProperty("bookId")
     private Long bookId;
+
+    @NotNull(message = "Number of borrowing days is required")
+    @Schema(description = "Number of days the book is borrowed for", example = "14")
+    @JsonProperty("borrowDays")
+    private Integer borrowDays;
 }
 

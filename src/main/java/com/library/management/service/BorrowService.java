@@ -112,8 +112,8 @@ public class BorrowService {
     }
     
     @Transactional
-    public BorrowResponse extendDueDate(Long userId, Long bookId) {
-        return extendBorrow(userId, bookId);
+    public BorrowResponse extendDueDate(Long userId, Long bookId, Integer extendDays) {
+        return extendBorrow(userId, bookId, extendDays);
     }
     
     @Transactional(readOnly = true)
@@ -190,24 +190,40 @@ public class BorrowService {
     }
     
     @Transactional
-    public BorrowResponse extendBorrow(Long userId, Long bookId) {
+    public BorrowResponse extendBorrow(Long userId, Long bookId, Integer extendDays) {
+        // Validate extendDays input
+        if (extendDays == null) {
+            // If no extendDays provided,
+            extendDays = EXTENSION_DAYS;
+        } else if (extendDays <= 0) {
+            // Handle invalid extension days (negative or zero)
+            throw new IllegalArgumentException("Extension days must be greater than zero.");
+        }
+        // Retrieve the active borrow record for the user and book
         Borrow borrow = borrowRepository.findActiveBorrowByUserAndBook(userId, bookId)
                 .orElseThrow(() -> new ResourceNotFoundException("Active borrow record not found for user ID: " + userId + " and book ID: " + bookId));
-        
+
+        // Check if the borrow status is active
         if (borrow.getStatus() != Borrow.BorrowStatus.ACTIVE) {
             throw new BusinessLogicException("Only active borrows can be extended");
         }
-        
+
+        // Check the maximum number of extensions
         if (borrow.getExtensionCount() >= MAX_EXTENSIONS) {
             throw new BusinessLogicException(
-                String.format("Maximum number of extensions (%d) reached", MAX_EXTENSIONS));
+                    String.format("Maximum number of extensions (%d) reached", MAX_EXTENSIONS));
         }
-        
+
+        // Check if the borrow is overdue, as overdue books cannot be extended
         if (borrowMapper.isOverdue(borrow)) {
             throw new BusinessLogicException("Overdue books cannot be extended");
         }
-        
-        borrow.setDueDate(borrow.getDueDate().plusDays(EXTENSION_DAYS));
+
+        // Calculate the new due date by adding the extension days
+        LocalDate newDueDate = borrow.getDueDate().plusDays(extendDays);
+
+        // Update the borrow record with the new due date and increment the extension count
+        borrow.setDueDate(newDueDate);
         borrow.setExtensionCount(borrow.getExtensionCount() + 1);
         
         Borrow updatedBorrow = borrowRepository.save(borrow);
