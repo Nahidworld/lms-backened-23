@@ -46,4 +46,3 @@ public class SwaggerConfig {
                                 .description("Enter JWT token obtained from login endpoint. Do not include 'Bearer ' prefix.")));
     }
 }
-

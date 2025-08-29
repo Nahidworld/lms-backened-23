@@ -13,15 +13,15 @@ import java.util.stream.Collectors;
 
 @Component
 public class BookMapper {
-    
+
     @Autowired
     private CategoryMapper categoryMapper;
-    
+
     public Book toEntity(BookCreateRequest request, Category category) {
         if (request == null) {
             return null;
         }
-        
+
         return Book.builder()
                 .name(request.getName())
                 .shortDetails(request.getShortDetails())
@@ -30,18 +30,18 @@ public class BookMapper {
                 .category(category)
                 .format(request.getFormat())
                 .totalCopies(request.getTotalCopies())
-                .availableCopies(request.getAvailableCopies() != null ? 
-                    request.getAvailableCopies() : request.getTotalCopies())
+                .availableCopies(request.getAvailableCopies() != null ?
+                        request.getAvailableCopies() : request.getTotalCopies())
                 .isbn(request.getIsbn())
                 .publicationYear(request.getPublicationYear())
                 .build();
     }
-    
+
     public BookResponse toResponse(Book book) {
         if (book == null) {
             return null;
         }
-        
+
         return BookResponse.builder()
                 .id(book.getId())
                 .name(book.getName())
@@ -64,12 +64,12 @@ public class BookMapper {
                 .audioFileUrl(book.getAudioFileUrl())
                 .build();
     }
-    
+
     public BookResponse toResponseWithoutCategory(Book book) {
         if (book == null) {
             return null;
         }
-        
+
         return BookResponse.builder()
                 .id(book.getId())
                 .name(book.getName())
@@ -92,12 +92,12 @@ public class BookMapper {
                 .audioFileUrl(book.getAudioFileUrl())
                 .build();
     }
-    
+
     public void updateEntity(Book book, BookUpdateRequest request, Category category) {
         if (book == null || request == null) {
             return;
         }
-        
+
         if (request.getName() != null) {
             book.setName(request.getName());
         }
@@ -129,26 +129,25 @@ public class BookMapper {
             book.setPublicationYear(request.getPublicationYear());
         }
     }
-    
+
     public List<BookResponse> toResponseList(List<Book> books) {
         if (books == null) {
             return null;
         }
-        
+
         return books.stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
-    
+
     private Double calculateAverageRating(Book book) {
         if (book.getReviews() == null || book.getReviews().isEmpty()) {
             return null;
         }
-        
+
         return book.getReviews().stream()
                 .mapToInt(review -> review.getRating())
                 .average()
                 .orElse(0.0);
     }
 }
-

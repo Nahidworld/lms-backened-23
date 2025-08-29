@@ -67,7 +67,7 @@ public class JwtUtil {
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
-        
+
         // Add additional claims if userDetails is a User entity
         if (userDetails instanceof User) {
             User user = (User) userDetails;
@@ -75,7 +75,7 @@ public class JwtUtil {
             claims.put("role", user.getRole());
             claims.put("email", user.getEmail());
         }
-        
+
         return createToken(claims, userDetails.getUsername());
     }
 
@@ -96,4 +96,3 @@ public class JwtUtil {
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 }
-

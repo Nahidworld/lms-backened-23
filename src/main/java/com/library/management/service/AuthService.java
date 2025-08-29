@@ -30,7 +30,7 @@ public class AuthService {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new ResourceAlreadyExistsException("User", "email", request.getEmail());
         }
-        
+
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new ResourceAlreadyExistsException("User", "username", request.getUsername());
         }
@@ -80,5 +80,4 @@ public class AuthService {
                 .build();
     }
 }
-
 

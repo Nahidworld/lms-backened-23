@@ -51,14 +51,19 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.frameOptions().disable())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // Allow unauthenticated access to specific auth endpoints (login and register). Logout is intentionally not permitted here
+                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/register-admin").permitAll()
+                        // Swagger and API docs should remain publicly accessible
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/api-docs/**").permitAll()
+                        // Permit access to H2 console and file resources
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/files/**").permitAll()
-                        .requestMatchers("/api/book/list", "/api/book/search", "/api/book/retrieve/**", 
-                                        "/api/book/category/**", "/api/book/available", 
-                                        "/api/book/popular-books", "/api/book/new-collection").permitAll()
+                        // Public book and category endpoints
+                        .requestMatchers("/api/book/list", "/api/book/search", "/api/book/retrieve/**",
+                                "/api/book/category/**", "/api/book/available",
+                                "/api/book/popular-books", "/api/book/new-collection").permitAll()
                         .requestMatchers("/api/category/list").permitAll()
+                        // Any other request (including /api/auth/logout) requires authentication
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -68,4 +73,3 @@ public class SecurityConfig {
         return http.build();
     }
 }
-

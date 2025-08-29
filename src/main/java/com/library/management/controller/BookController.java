@@ -13,6 +13,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.validation.Validator;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -22,6 +28,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/api/book")
@@ -30,6 +38,17 @@ import java.util.List;
 public class BookController {
 
     private final BookService bookService;
+    private final ObjectMapper objectMapper;
+    private final Validator validator;
+
+    /**
+     * Base directory on disk where uploaded files should be stored. Defaults to
+     * the relative "uploads" folder if the application property
+     * {@code file.upload-dir} is not set. This allows for storing files in an
+     * absolute location when configured (e.g. "/var/lib/myapp/uploads").
+     */
+    @Value("${file.upload-dir:uploads}")
+    private String uploadBaseDir;
 
     @PostMapping("/create/with-links")
     @PreAuthorize("hasRole('ADMIN')")
@@ -46,7 +65,7 @@ public class BookController {
     })
     public ResponseEntity<BookResponse> createBookWithLinks(
             @Valid @RequestBody BookCreateRequest request) {
-        
+
         // Set available copies if not provided
         if (request.getAvailableCopies() == null) {
             request.setAvailableCopies(request.getTotalCopies());
@@ -57,9 +76,18 @@ public class BookController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @PostMapping("/create")
+    /**
+     * Create a new book using a JSON payload. This endpoint is retained for
+     * backwards compatibility and accepts a standard JSON request body. When
+     * uploading files (e.g. a book cover image) please use the multipart
+     * variant of this endpoint defined below.
+     *
+     * @param request the book details
+     * @return the created book response
+     */
+    @PostMapping(value = "/create", consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Add a new book", description = "Adds a new book to the library (Admin only)")
+    @Operation(summary = "Add a new book (JSON)", description = "Adds a new book to the library using a JSON body (Admin only)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Book created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data"),
@@ -67,8 +95,151 @@ public class BookController {
             @ApiResponse(responseCode = "404", description = "Category not found"),
             @ApiResponse(responseCode = "409", description = "Book with ISBN already exists")
     })
-    public ResponseEntity<BookResponse> createBook(
+    public ResponseEntity<BookResponse> createBookJson(
             @Valid @RequestBody BookCreateRequest request) {
+        // Default available copies to total copies when omitted to ensure logical consistency
+        if (request.getAvailableCopies() == null) {
+            request.setAvailableCopies(request.getTotalCopies());
+        }
+        BookResponse response = bookService.createBook(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    /**
+     * Create a new book with an optional uploaded book cover, PDF and audio file.
+     * This endpoint accepts a multipart/form-data request containing a
+     * {@code BookCreateRequest} as the {@code book} part and optional file
+     * uploads. Files will be stored in the configured uploads directory and the
+     * resulting URLs will be added to the request before persisting. If no files
+     * are provided the behaviour is identical to the JSON endpoint.
+     *
+     * @param request   the book details sent in the multipart {@code book} part
+     * @param bookCover the image file for the book cover (optional)
+     * @param pdfFile   the PDF file for the book (optional)
+     * @param audioFile the audio file for the audiobook (optional)
+     * @return the created book response
+     */
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Add a new book (multipart)", description = "Adds a new book to the library with optional uploaded files (Admin only)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Book created successfully",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = BookResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "403", description = "Access denied - Admin role required"),
+            @ApiResponse(responseCode = "404", description = "Category not found"),
+            @ApiResponse(responseCode = "409", description = "Book with ISBN already exists")
+    })
+    public ResponseEntity<BookResponse> createBookWithFiles(
+            @RequestPart("book") String bookJson,
+            @RequestPart(value = "bookCover", required = false) org.springframework.web.multipart.MultipartFile bookCover,
+            @RequestPart(value = "pdfFile", required = false) org.springframework.web.multipart.MultipartFile pdfFile,
+            @RequestPart(value = "audioFile", required = false) org.springframework.web.multipart.MultipartFile audioFile) {
+        // Parse the JSON part into a BookCreateRequest. This allows the client to omit
+        // the content-type header on the part while still sending valid JSON.
+        BookCreateRequest request;
+        try {
+            request = objectMapper.readValue(bookJson, BookCreateRequest.class);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Invalid JSON for book part", e);
+        }
+
+        // Validate the parsed request manually since @Valid is not applied to String parts.
+        Set<ConstraintViolation<BookCreateRequest>> violations = validator.validate(request);
+        if (!violations.isEmpty()) {
+            throw new ConstraintViolationException(violations);
+        }
+
+        // Ensure availableCopies defaults to totalCopies when omitted
+        if (request.getAvailableCopies() == null) {
+            request.setAvailableCopies(request.getTotalCopies());
+        }
+
+        // Handle cover image upload
+        if (bookCover != null && !bookCover.isEmpty()) {
+            if (!com.library.management.util.FileValidationUtil.isValidImageFile(bookCover)) {
+                throw new com.library.management.exception.BusinessLogicException("Invalid image file. Only JPEG and PNG formats up to 10MB are allowed.");
+            }
+            try {
+                // Determine the upload directory and ensure it exists
+                java.nio.file.Path uploadDir = java.nio.file.Paths.get(uploadBaseDir, "covers");
+                java.nio.file.Files.createDirectories(uploadDir);
+
+                // Build a unique filename preserving the original extension
+                String extension = com.library.management.util.FileValidationUtil.getFileExtension(bookCover.getOriginalFilename());
+                String filename = java.util.UUID.randomUUID().toString() + extension;
+                java.nio.file.Path destination = uploadDir.resolve(filename);
+
+                // Copy the file to the target location, replacing existing file if present
+                try (java.io.InputStream inputStream = bookCover.getInputStream()) {
+                    java.nio.file.Files.copy(inputStream, destination, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+
+                // Build a full URL including the server context path so clients
+                // receive an absolute URL (e.g. http://localhost:8080/files/covers/<file>). The
+                // ServletUriComponentsBuilder uses the current request context to
+                // determine the host and port.
+                String url = ServletUriComponentsBuilder.fromCurrentContextPath()
+                        .path("/files/covers/")
+                        .path(filename)
+                        .toUriString();
+                request.setBookCoverUrl(url);
+            } catch (java.io.IOException e) {
+                throw new com.library.management.exception.BusinessLogicException("Failed to store book cover file", e);
+            }
+        }
+
+        // Handle PDF upload
+        if (pdfFile != null && !pdfFile.isEmpty()) {
+            if (!com.library.management.util.FileValidationUtil.isValidPdfFile(pdfFile)) {
+                throw new com.library.management.exception.BusinessLogicException("Invalid PDF file. Only PDF files up to 10MB are allowed.");
+            }
+            try {
+                java.nio.file.Path uploadDir = java.nio.file.Paths.get(uploadBaseDir, "pdfs");
+                java.nio.file.Files.createDirectories(uploadDir);
+                String extension = com.library.management.util.FileValidationUtil.getFileExtension(pdfFile.getOriginalFilename());
+                String filename = java.util.UUID.randomUUID().toString() + extension;
+                java.nio.file.Path destination = uploadDir.resolve(filename);
+                try (java.io.InputStream inputStream = pdfFile.getInputStream()) {
+                    java.nio.file.Files.copy(inputStream, destination, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+                String url = ServletUriComponentsBuilder.fromCurrentContextPath()
+                        .path("/files/pdfs/")
+                        .path(filename)
+                        .toUriString();
+                request.setPdfFileUrl(url);
+            } catch (java.io.IOException e) {
+                throw new com.library.management.exception.BusinessLogicException("Failed to store PDF file", e);
+            }
+        }
+
+        // Handle audio upload
+        if (audioFile != null && !audioFile.isEmpty()) {
+            // Validate file size manually since audio MIME types can vary
+            if (audioFile.getSize() > (10 * 1024 * 1024)) {
+                throw new com.library.management.exception.BusinessLogicException("Audio file must not exceed 10MB");
+            }
+            try {
+                java.nio.file.Path uploadDir = java.nio.file.Paths.get(uploadBaseDir, "audio");
+                java.nio.file.Files.createDirectories(uploadDir);
+                String extension = com.library.management.util.FileValidationUtil.getFileExtension(audioFile.getOriginalFilename());
+                String filename = java.util.UUID.randomUUID().toString() + extension;
+                java.nio.file.Path destination = uploadDir.resolve(filename);
+                try (java.io.InputStream inputStream = audioFile.getInputStream()) {
+                    java.nio.file.Files.copy(inputStream, destination, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+                String url = ServletUriComponentsBuilder.fromCurrentContextPath()
+                        .path("/files/audio/")
+                        .path(filename)
+                        .toUriString();
+                request.setAudioFileUrl(url);
+            } catch (java.io.IOException e) {
+                throw new com.library.management.exception.BusinessLogicException("Failed to store audio file", e);
+            }
+        }
+
+        // Delegate creation to service layer
         BookResponse response = bookService.createBook(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -240,4 +411,3 @@ public class BookController {
 
 
 }
-

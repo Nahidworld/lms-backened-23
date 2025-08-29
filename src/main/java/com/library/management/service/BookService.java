@@ -23,7 +23,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class BookService {
-    
+
     private final BookRepository bookRepository;
     private final BookMapper bookMapper;
     private final CategoryService categoryService;
@@ -50,7 +50,7 @@ public class BookService {
         validateBookBusinessRules(book);
 
         Book savedBook = bookRepository.save(book);
-        
+
         // Create response DTO from entity
         BookResponse response = bookMapper.toResponse(savedBook);
 
@@ -66,7 +66,7 @@ public class BookService {
     @Transactional(readOnly = true)
     public Page<BookResponse> getAllBooks(Long categoryId, Boolean available, Pageable pageable) {
         Page<Book> books;
-        
+
         if (categoryId != null && available != null && available) {
             books = bookRepository.findByCategoryIdAndAvailableCopiesGreaterThan(categoryId, 0, pageable);
         } else if (categoryId != null) {
@@ -76,7 +76,7 @@ public class BookService {
         } else {
             books = bookRepository.findAll(pageable);
         }
-        
+
         return books.map(bookMapper::toResponse);
     }
 
@@ -91,7 +91,7 @@ public class BookService {
     public Page<BookResponse> getBooksByCategory(Long categoryId, Pageable pageable) {
         // Verify category exists
         categoryService.getCategoryEntityById(categoryId);
-        
+
         Page<Book> books = bookRepository.findByCategoryId(categoryId, pageable);
         return books.map(bookMapper::toResponse);
     }
@@ -160,7 +160,7 @@ public class BookService {
     @Transactional
     public void deleteBook(Long id) {
         Book book = getBookEntityById(id);
-        
+
         // Simple check - just delete the book
         bookRepository.delete(book);
     }
@@ -168,7 +168,7 @@ public class BookService {
     @Transactional
     public BookResponse updateBookAvailability(Long id, int availableCopies) {
         Book book = getBookEntityById(id);
-        
+
         if (availableCopies < 0 || availableCopies > book.getTotalCopies()) {
             throw new BusinessLogicException("Available copies must be between 0 and " + book.getTotalCopies());
         }
@@ -194,26 +194,26 @@ public class BookService {
     @Transactional
     public void decrementAvailableCopies(Long bookId) {
         Book book = getBookEntityById(bookId);
-        
+
         if (book.getAvailableCopies() <= 0) {
             throw new BusinessLogicException("No available copies for this book");
         }
 
         book.setAvailableCopies(book.getAvailableCopies() - 1);
-        
+
         bookRepository.save(book);
     }
 
     @Transactional
     public void incrementAvailableCopies(Long bookId) {
         Book book = getBookEntityById(bookId);
-        
+
         if (book.getAvailableCopies() >= book.getTotalCopies()) {
             throw new BusinessLogicException("Available copies cannot exceed total copies");
         }
 
         book.setAvailableCopies(book.getAvailableCopies() + 1);
-        
+
         bookRepository.save(book);
     }
 
@@ -235,4 +235,3 @@ public class BookService {
         return bookMapper.toResponse(savedBook);
     }
 }
-
