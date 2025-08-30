@@ -64,6 +64,20 @@ public class BookService {
     }
 
     @Transactional(readOnly = true)
+    public Page<BookResponse> filterBooks(String title, Long categoryId, Boolean available, String author, String isbn, Pageable pageable) {
+        Page<Book> books = bookRepository.filterBooks(
+                (title != null && !title.isBlank()) ? title : null,
+                categoryId,
+                available,
+                (author != null && !author.isBlank()) ? author : null,
+                (isbn != null && !isbn.isBlank()) ? isbn : null,
+                pageable
+        );
+        return books.map(bookMapper::toResponse);
+    }
+
+
+    @Transactional(readOnly = true)
     public Page<BookResponse> getAllBooks(Long categoryId, Boolean available, Pageable pageable) {
         Page<Book> books;
 

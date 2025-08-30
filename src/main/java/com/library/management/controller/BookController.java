@@ -256,6 +256,19 @@ public class BookController {
         return ResponseEntity.ok(isAvailable);
     }
 
+    @GetMapping("/filter")
+    @Operation(summary = "Filter books", description = "Filter books by optional fields: title, categoryId, available, author, isbn")
+    public ResponseEntity<Page<BookResponse>> filterBooks(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Boolean available,
+            @RequestParam(required = false) String author,
+            @RequestParam(required = false) String isbn,
+            Pageable pageable) {
+        Page<BookResponse> response = bookService.filterBooks(title, categoryId, available, author, isbn, pageable);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/retrieve/{id}")
     @Operation(summary = "Retrieve book details", description = "Retrieves detailed information about a book (User/Admin)")
     @ApiResponses(value = {

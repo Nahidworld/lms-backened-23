@@ -48,4 +48,22 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 
     @Query("SELECT COUNT(r) FROM Review r WHERE r.book.id = :bookId")
     long getReviewCount(@Param("bookId") Long bookId);
+
+
+    @Query("""
+    SELECT b FROM Book b
+    WHERE (:title IS NULL OR LOWER(b.name) LIKE LOWER(CONCAT('%', :title, '%')))
+      AND (:categoryId IS NULL OR b.category.id = :categoryId)
+      AND (:available IS NULL OR (:available = TRUE AND b.availableCopies > 0) OR (:available = FALSE AND b.availableCopies = 0))
+      AND (:author IS NULL OR LOWER(b.author) LIKE LOWER(CONCAT('%', :author, '%')))
+      AND (:isbn IS NULL OR b.isbn LIKE CONCAT('%', :isbn, '%'))
+    ORDER BY b.id DESC
+""")
+    Page<Book> filterBooks(@Param("title") String title,
+                           @Param("categoryId") Long categoryId,
+                           @Param("available") Boolean available,
+                           @Param("author") String author,
+                           @Param("isbn") String isbn,
+                           Pageable pageable);
+
 }
