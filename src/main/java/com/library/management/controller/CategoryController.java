@@ -73,6 +73,15 @@ public class CategoryController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/search")
+    @Operation(summary = "Search categories", description = "Search categories by name (case-insensitive contains)")
+    public ResponseEntity<Page<CategoryResponse>> searchCategories(
+            @RequestParam String query,
+            Pageable pageable) {
+        Page<CategoryResponse> response = categoryService.searchCategories(query, pageable);
+        return ResponseEntity.ok(response);
+    }
+
     @PutMapping("/edit/{id}")
     @Operation(summary = "Update category", description = "Updates an existing category (Admin only)")
     @ApiResponses(value = {

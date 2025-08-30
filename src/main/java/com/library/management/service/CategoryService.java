@@ -93,6 +93,12 @@ public class CategoryService {
         List<Category> categories = categoryRepository.findByNameContainingIgnoreCase(name);
         return categoryMapper.toResponseList(categories);
     }
+
+    @Transactional(readOnly = true)
+    public Page<CategoryResponse> searchCategories(String query, Pageable pageable) {
+        Page<Category> categories = categoryRepository.findByNameContainingIgnoreCase(query, pageable);
+        return categories.map(categoryMapper::toResponse);
+    }
     
     // Helper method for internal use by other services
     @Transactional(readOnly = true)
